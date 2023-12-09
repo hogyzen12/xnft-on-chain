@@ -1,57 +1,84 @@
-import * as Linking from "expo-linking";
-import { Button, Image, Text } from "react-native";
-import { atom, useRecoilState } from "recoil";
+import React, { useEffect, useState } from 'react';
+import { View, Text, Image, FlatList, ActivityIndicator, TextInput } from 'react-native';
+import { atom, useRecoilState } from 'recoil';
 
-import { Screen } from "../components/Screen";
-import { Section } from "../components/Section";
-import { SignMessageButton } from "../components/SignMessageButton";
+import { Screen } from '../components/Screen';
 
-const testAtom = atom<"native" | "bright">({
-  key: "testAtom",
-  default: "native",
+// Atom for storing fetched data
+const explorerDataAtom = atom({
+  key: 'explorerData',
+  default: [],
 });
 
-function LearnMoreLink({ url }: { url: string }) {
-  return <Text onPress={() => Linking.openURL(url)}>Learn more</Text>;
+function FullScreenLoadingIndicator() {
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <ActivityIndicator />
+    </View>
+  );
+}
+
+function formatPDA(pda) {
+  return `${pda.substring(0, 3)}...${pda.substring(pda.length - 3)}`;
+}
+
+function ExplorerItem({ item }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+      <Image
+        source={{ uri: item.image }}
+        style={{ width: 150, height: 150, borderRadius: 10, marginRight: 10 }}
+      />
+      <View>
+        <Text style={{ fontWeight: 'bold' }}>{item.name}</Text>
+        <Text style={{ fontSize: 12 }}>{formatPDA(item.pda)}</Text>
+        <Text>Status: {item.status}</Text>
+      </View>
+    </View>
+  );
 }
 
 export function ExamplesScreens() {
-  const [future, setFuture] = useRecoilState(testAtom);
+  const [explorerData, setExplorerData] = useRecoilState(explorerDataAtom);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    fetch('https://solanagetaccount.info/on-chain-queue')
+      .then(response => response.json())
+      .then(data => {
+        setExplorerData(data.data.sort((a, b) => b.index - a.index));
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error('Error fetching data:', error);
+        setLoading(false);
+      });
+  }, []);
+
+  const filteredData = searchQuery
+    ? explorerData.filter(item => item.index.toString() === searchQuery)
+    : explorerData;
+
+  if (loading) {
+    return <FullScreenLoadingIndicator />;
+  }
 
   return (
     <Screen>
-      <Section title="Recoil">
-        <Button
-          title={`The Future is ${future}`}
-          color={
-            future === "bright" ? "rgb(228, 208, 10)" : "rgb(33, 150, 243)"
-          }
-          onPress={() => setFuture(future === "bright" ? "native" : "bright")}
-        />
-      </Section>
-      <Section title="Local Image Import">
-        <Image
-          source={require("../../assets/icon.png")}
-          style={{ width: 50, height: 50 }}
-        />
-        <LearnMoreLink url="https://reactnative.dev/docs/images#static-image-resources" />
-      </Section>
-      <Section title="Custom Font">
-        <Text style={{ fontFamily: "Inter_900Black" }}>
-          Inter 900 Black Font
-        </Text>
-        <LearnMoreLink url="https://docs.expo.dev/guides/using-custom-fonts/#using-a-google-font" />
-      </Section>
-      <Section title="Opening a URL">
-        <Button
-          onPress={() => Linking.openURL("https://xnft.gg")}
-          title="Open xNFT.gg"
-        />
-        <LearnMoreLink url="https://docs.expo.dev/versions/latest/sdk/linking/#linkingopenurlurl" />
-      </Section>
-      <Section title="Signing a message">
-        <SignMessageButton />
-      </Section>
+      <TextInput
+        style={{ height: 40, borderColor: 'gray', borderWidth: 1, padding: 10, margin: 10 }}
+        onChangeText={text => setSearchQuery(text)}
+        value={searchQuery}
+        placeholder="Search by index"
+        keyboardType="numeric"
+      />
+      <FlatList
+        data={filteredData}
+        keyExtractor={item => item.mint}
+        renderItem={({ item }) => <ExplorerItem item={item} />}
+        ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: '#eee' }} />}
+      />
     </Screen>
   );
 }
