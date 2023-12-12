@@ -6,6 +6,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFonts, Inter_900Black } from "@expo-google-fonts/dev";
 
+import { SelectScreens } from "./screens/SelectScreen";
 import { ExamplesScreens } from "./screens/ExamplesScreen";
 import { HomeScreen } from "./screens/HomeScreen";
 
@@ -25,7 +26,17 @@ function TabNavigator() {
         options={{
           tabBarLabel: "Home",
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="account" color={color} size={size} />
+            <MaterialCommunityIcons name="home" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Traits"
+        component={SelectScreens}
+        options={{
+          tabBarLabel: "Traits",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="magnify" color={color} size={size} />
           ),
         }}
       />
@@ -33,9 +44,9 @@ function TabNavigator() {
         name="Explorer"
         component={ExamplesScreens}
         options={{
-          tabBarLabel: "Explorer",
+          tabBarLabel: "On chain Explorer",
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="home" color={color} size={size} />
+            <MaterialCommunityIcons name="link" color={color} size={size} />
           ),
         }}
       />
