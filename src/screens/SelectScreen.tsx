@@ -3,7 +3,7 @@ import { View, FlatList, Image, TouchableOpacity, StyleSheet, Text } from 'react
 import collectionData from '../../assets/collection.json';
 import { Screen } from '../components/Screen';
 
-const BASE_URL = 'https://shdw-drive.genesysgo.net/7SGVq4i2SoDxd21UVieiicDHG8HoZ9cNP5i5HQ1JvTZf/';
+const BASE_URL = 'https://shdw-drive.genesysgo.net/3UgjUKQ1CAeaecg5CWk88q9jGHg8LJg9MAybp4pevtFz/';
 
 function AttributeSelector({ data, attribute, onSelectAttribute, selectedValue, isOpen, toggleOpen }) {
   const uniqueAttributes = Array.from(new Set(data.map(item => item[attribute]))).map(attr => {
