@@ -38,7 +38,7 @@ function ExplorerItem({ item }) {
   );
 }
 
-export function ExamplesScreens() {
+export function TraitsScreens() {
   const [explorerData, setExplorerData] = useRecoilState(explorerDataAtom);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');

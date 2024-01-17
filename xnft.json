@@ -1,9 +1,9 @@
 {
   "kind": "app",
   "storage": "aws",
-  "name": "Metame Onchain",
-  "version": "0.1.3",
-  "description": "Metame on chain explorer",
+  "name": "Card Crush",
+  "version": "0.1.4",
+  "description": "A Match 3 game inspired by Metame IP.",
   "website": "https://www.metamenft.io/",
   "price": 0,
   "tag": "nfts",

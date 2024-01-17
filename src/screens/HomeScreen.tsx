@@ -18,16 +18,16 @@ export function HomeScreen({ navigation }) {
         resizeMode="contain"
       />
       <TouchableOpacity
-        onPress={() => handlePress('Traits')}
+        onPress={() => handlePress('Game')}
         style={tw`bg-yellow-400 mt-8 px-6 py-3 rounded-full`}
       >
-        <Text style={tw`text-lg font-bold text-black`}>Explore Traits</Text>
+        <Text style={tw`text-lg font-bold text-black`}>Card Crush</Text>
       </TouchableOpacity>
       <TouchableOpacity
-        onPress={() => handlePress('Explorer')}
+        onPress={() => handlePress('Leaderboard')}
         style={tw`bg-yellow-400 mt-8 px-6 py-3 rounded-full`}
       >
-        <Text style={tw`text-lg font-bold text-black`}>Explore On Chain</Text>
+        <Text style={tw`text-lg font-bold text-black`}>Leaderboard</Text>
       </TouchableOpacity>
     </Screen>
   );

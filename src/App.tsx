@@ -6,8 +6,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFonts, Inter_900Black } from "@expo-google-fonts/dev";
 
-import { SelectScreens } from "./screens/SelectScreen";
-import { ExamplesScreens } from "./screens/ExamplesScreen";
+import { GameScreens } from "./screens/GameScreen";
+import { LeaderboardScreens } from "./screens/LeaderboardScreen";
 import { HomeScreen } from "./screens/HomeScreen";
 
 const Tab = createBottomTabNavigator();
@@ -31,22 +31,22 @@ function TabNavigator() {
         }}
       />
       <Tab.Screen
-        name="Traits"
-        component={SelectScreens}
+        name="Game"
+        component={GameScreens}
         options={{
-          tabBarLabel: "Traits",
+          tabBarLabel: "Card Crush",
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="magnify" color={color} size={size} />
+            <MaterialCommunityIcons name="card-plus" color={color} size={size} />
           ),
         }}
       />
       <Tab.Screen
-        name="Explorer"
-        component={ExamplesScreens}
+        name="Leaderboard"
+        component={LeaderboardScreens}
         options={{
-          tabBarLabel: "On chain Explorer",
+          tabBarLabel: "Leaderboard",
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="link" color={color} size={size} />
+            <MaterialCommunityIcons name="format-list-numbered" color={color} size={size} />
           ),
         }}
       />
