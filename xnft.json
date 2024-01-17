@@ -3,7 +3,7 @@
   "storage": "aws",
   "name": "Card Crush",
   "version": "0.1.4",
-  "description": "A Match 3 game inspired by Metame IP.",
+  "description": "Metame Match 3 game",
   "website": "https://www.metamenft.io/",
   "price": 0,
   "tag": "nfts",
