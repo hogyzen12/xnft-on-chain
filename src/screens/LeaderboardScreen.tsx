@@ -8,9 +8,17 @@ const LAMPORTS_PER_SOL = 1000000000; // Number of lamports in one SOL
 
 interface LeaderboardItem {
   signer: string;
-  signature: string;
+  total_points: number;
+  total_cards: number;
+  entry_rate: string; // New field
+  streak: number; // New field
+}
+
+interface EntryItem {
+  seed: string;
   points: number;
   cards_collected: number;
+  date: string; // New field
 }
 
 const poolState = atom({
@@ -19,41 +27,48 @@ const poolState = atom({
 });
 
 export function LeaderboardScreens() {
-  const [topPointsData, setTopPointsData] = useState<LeaderboardItem[]>([]);
-  const [topCardsCollectedData, setTopCardsCollectedData] = useState<LeaderboardItem[]>([]);  
-  const [balance, setBalance] = useRecoilState(poolState); // State variable for the balance
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardItem[]>([]);
+  const [userEntries, setUserEntries] = useState<EntryItem[]>([]);
+  const [balance, setBalance] = useRecoilState(poolState);
   const [showingMyEntries, setShowingMyEntries] = useState(false);
 
-  const pks = usePublicKeys() as unknown as {solana: string};
-  console.log(pks)
-  let pksString: string = "No pubkeys available!"
-  const pk = pks ? new PublicKey(pks?.solana) : undefined;
-  if(pk){
-      pksString = pk.toBase58();
-  }
+  // Correctly use the hook at the top level
+  const pks = usePublicKeys() as unknown as { solana: string };
+  const userPublicKey = pks?.solana ? new PublicKey(pks.solana).toBase58() : "";
 
-  const userPublicKey = pksString; // Replace this with actual user public key
-
-  const handleShowMyEntries = () => {
-    if (!showingMyEntries) {
-      // Filter for user's entries
-      const userTopPoints = topPointsData.filter(item => item.signer === userPublicKey);
-      const userTopCards = topCardsCollectedData.filter(item => item.signer === userPublicKey);
-      setTopPointsData(userTopPoints);
-      setTopCardsCollectedData(userTopCards);
-    } else {
-      // Show all entries
-      fetchLeaderboardData();
+  useEffect(() => {
+    fetchLeaderboardData();
+    if (userPublicKey) {
+      fetchUserEntries(userPublicKey);
     }
-    setShowingMyEntries(!showingMyEntries);
+  }, [userPublicKey]);
+
+  const fetchLeaderboardData = async () => {
+    try {
+      const response = await fetch('https://solanagetaccount.info/leaderboard');
+      const data = await response.json();
+      setLeaderboardData(data.leaderboard);
+    } catch (error) {
+      console.error('Failed to fetch leaderboard data:', error);
+    }
+  };
+
+  const fetchUserEntries = async (publicKey: string) => {
+    try {
+      const response = await fetch(`https://solanagetaccount.info/entries/${publicKey}`);
+      const data = await response.json();
+      setUserEntries(data.entries); // Assuming the API returns an array of entries
+    } catch (error) {
+      console.error('Failed to fetch user entries:', error);
+    }
   };
 
   useEffect(() => {
-    const connection = new Connection('https://solana-mainnet.g.alchemy.com/v2/tJU39R0J_FS049vOxqzyl4qMGP3F-i1e');
+    const connection = new Connection('https://damp-fabled-panorama.solana-mainnet.quiknode.pro/186133957d30cece76e7cd8b04bce0c5795c164e/');
     const prizePoolPublicKey = new PublicKey('crushpRpFZ7r36fNfCMKHFN4SDvc7eyXfHehVu34ecW');
     async function fetchBalance() {
       try {
-        const lamports = await connection.getBalance(prizePoolPublicKey); // Use PublicKey object
+        const lamports = await connection.getBalance(prizePoolPublicKey);
         const sol = lamports / LAMPORTS_PER_SOL;
         setBalance(sol);
       } catch (error) {
@@ -61,170 +76,142 @@ export function LeaderboardScreens() {
       }
     }
 
-    fetchBalance(); // Call the function
-  }, []);
-  
-  const navigation = useNavigation();
-  const fetchLeaderboardData = async () => {
-    try {
-      const response = await fetch('https://shdw-drive.genesysgo.net/3UgjUKQ1CAeaecg5CWk88q9jGHg8LJg9MAybp4pevtFz/leaderboard.json');
-      const data = await response.json();
-  
-      // Calculate global ranks for top points
-      const rankedTopPointsData = data.top_points.map((item, index) => ({
-        ...item,
-        globalRank: index + 1 // Rank is index + 1
-      }));
-  
-      // Calculate global ranks for top cards collected
-      const rankedTopCardsCollectedData = data.top_cards_collected.map((item, index) => ({
-        ...item,
-        globalRank: index + 1 // Rank is index + 1
-      }));
-  
-      setTopPointsData(rankedTopPointsData);
-      setTopCardsCollectedData(rankedTopCardsCollectedData);
-    } catch (error) {
-      console.error('Failed to fetch leaderboard data:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchLeaderboardData();
+    fetchBalance();
   }, []);
 
-  const truncateSigner = (signer: string) => {
-    return signer.substring(0, 4) + "..." + signer.substring(signer.length - 4);
+  const handleShowMyEntries = () => {
+    setShowingMyEntries(!showingMyEntries);
   };
 
-  const renderLeaderboardItem = ({ item }: { item: LeaderboardItem }) => (
+  // Adjust the function name for general use
+  const truncateString = (str: string) => {
+    return str.substring(0, 4) + "..";
+  };
+
+  const LeaderboardHeader = () => (
+    <View style={styles.leaderboardHeader}>
+      <Text style={styles.headerText}>Rank</Text>
+      <Text style={styles.headerText}>Key</Text>
+      <Text style={styles.headerText}>Points</Text>
+      <Text style={styles.headerText}>Cards</Text>
+      <Text style={styles.headerText}>Entry Rate</Text> {/* New */}
+      <Text style={styles.headerText}>Streak</Text> {/* New */}
+    </View>
+  );
+  
+  const renderLeaderboardItem = ({ item, index }: { item: LeaderboardItem; index: number }) => (
     <View style={styles.leaderboardItem}>
-      <View style={styles.rankContainer}>
-        <Text style={styles.rank}>{item.globalRank}</Text>
-      </View>
-      <View style={styles.userInfo}>
-        <Text style={styles.userName} numberOfLines={1} ellipsizeMode="tail">
-          {truncateSigner(item.signer)}
-        </Text>
-      </View>
-      <View style={styles.stats}>
-        <Text>Points: {item.points}</Text>
-        <Text>Cards: {item.cards_collected}</Text>
-      </View>
+      <Text style={styles.itemText}>{index + 1}</Text>
+      <Text style={styles.itemText}>{truncateString(item.signer)}</Text>
+      <Text style={styles.itemText}>{item.total_points}</Text>
+      <Text style={styles.itemText}>{item.total_cards}</Text>
+      <Text style={styles.itemText}>{item.entry_rate}</Text> {/* New */}
+      <Text style={styles.itemText}>{item.streak}</Text> {/* New */}
     </View>
   );
 
+  const renderUserEntries = () => {
+    if (userEntries.length === 0) {
+      return <Text>No entries found for this user.</Text>;
+    }
+  
+    return (
+      <>
+        <LeaderboardHeader />
+        {userEntries.map((item, index) => (
+          <View key={index} style={styles.leaderboardItem}>
+            <Text style={styles.itemText}>{index + 1}</Text>
+            <Text style={styles.itemText}>{truncateString(item.seed)}</Text>
+            <Text style={styles.itemText}>{item.points}</Text>
+            <Text style={styles.itemText}>{item.cards_collected}</Text>
+            <Text style={styles.itemText}>{item.date}</Text> {/* New */}
+          </View>
+        ))}
+      </>
+    );
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.prizeTitle}>Prize Pool Balance</Text>
-      <Text>{balance.toFixed(2)} SOL</Text>
-      <Text style={styles.title}>Point Leaders</Text>
-      <FlatList
-        data={topPointsData}
-        renderItem={renderLeaderboardItem}
-        keyExtractor={(item, index) => 'points' + item.signer + index}
-      />
+      {/* Display Prize Pool Balance */}
+      <View style={styles.prizePoolContainer}>
+        <Text style={styles.prizeTitle}>Prize Pool Balance: {balance.toFixed(2)} SOL</Text>
+      </View>
+      {/* Existing UI elements remain unchanged */}
       <Button 
         title={showingMyEntries ? "Show All Entries" : "Show Just My Entries"} 
         onPress={handleShowMyEntries} 
       />
-      <View style={styles.topCardCollectorContainer}>
-        <Text style={styles.cardTitle}>Most Cards Collected</Text>
-        {topCardsCollectedData.length > 0 && (
-          <View style={styles.topCardCollectorItem}>
-            <Text style={styles.topCardCollectorText}>
-              Signer: {truncateSigner(topCardsCollectedData[0].signer)} - 
-            </Text>
-            <Text style={styles.topCardCollectorText}>
-              Cards: {topCardsCollectedData[0].cards_collected}
-            </Text>
-          </View>
-        )}
-      </View>
+      {!showingMyEntries ? (
+        <>
+          <LeaderboardHeader />
+          <FlatList
+            data={leaderboardData}
+            renderItem={renderLeaderboardItem}
+            keyExtractor={(item, index) => 'leaderboard' + item.signer + index}
+          />
+        </>
+      ) : (
+        renderUserEntries()
+      )}
       <Button title="Refresh Leaderboard" onPress={fetchLeaderboardData} />
     </View>
   );
 }
 
+// Adjusted styles to include the leaderboard header and column alignment
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 18,
-    marginBottom: 15,
-  },
-  prizeTitle: {
-    fontSize: 18,
-    marginBottom: 3,
-  },
-  cardTitle: {
-    fontSize: 12,
-    marginBottom: 10,
+  leaderboardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingBottom: 10,
   },
   leaderboardItem: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-evenly",
     alignItems: "center",
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: "#ccc",
   },
-  rankContainer: {
-    width: 30,
-    marginRight: 10,
-  },
-  rank: {
+  headerText: {
     fontSize: 16,
     fontWeight: "bold",
+    flex: 1, // Ensures equal spacing
   },
-  userInfo: {
+  itemText: {
+    fontSize: 16,
+    flex: 2, // Ensures alignment with headers
+  },
+  container: {
     flex: 1,
-    marginRight: 10,
+    marginTop: 20,
   },
-  userName: {
-    fontSize: 16,
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+  },
+  header: {
     fontWeight: "bold",
+    flex: 1,
+    textAlign: 'center', // Ensure text is centered within each column
   },
-  userSeed: {
-    fontSize: 12,
-    color: "#666",
+  column: {
+    flex: 1,
+    textAlign: 'center', // Ensure text is centered, improving alignment
   },
-  stats: {
-    alignItems: "flex-end",
-  },
-  challengeButton: {
-    backgroundColor: "#007AFF", // Blue background color
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-  },
-
-  challengeButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "bold",
-  },
-  topCardCollectorContainer: {
-    alignItems: "center",
+  prizePoolContainer: {
     padding: 5,
-    marginVertical: 10,
-    backgroundColor: "#f0f0f0", // Light background for highlight
-    borderRadius: 5,
-    width: '90%', // Adjust width as needed
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  topCardCollectorItem: {
-    flexDirection: 'row', // Align items in a row
-    justifyContent: 'center', // Center the items
-    alignItems: 'center', // Align items vertically
-  },
-  topCardCollectorText: {
-    fontSize: 11,
-    fontWeight: "bold",
-    color: "#333",
-    marginHorizontal: 2, // Add some horizontal spacing between text
+  prizeTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
   },
 });

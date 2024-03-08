@@ -40,13 +40,13 @@ const candyImages = [
 ];
 
 // Seed string (you can change it or even make it a prop to change dynamically)
-const seed = "2cN982Bz3FTMGJdYrN91RFsHs4erJQTgQ63if4mYaawLzzwVmjgtcDpBo7gs4Vf8TBk81PH15qXrStJVgFmTmtbc";
+let currentSeed = "3oLQ3tFiwrD1w1FXU6j7hmHLyYv5suye5Ek9cCKYomNZHxhiDKprMSb3rU3UKRq9v3HMTmzjMVUg79Y5ygHtffkL";
 
-const generateBoardFromSeed = (seed) => {
+const generateBoardFromSeed = (currentSeed) => {
   let board = Array.from({ length: gridRows }, () => Array(gridCols).fill(0));
   for (let i = 0; i < gridRows; i++) {
     for (let j = 0; j < gridCols; j++) {
-      const seedChar = seed[i * gridRows + j];
+      const seedChar = currentSeed[i * gridRows + j];
       board[i][j] = seedChar.charCodeAt(0) % 6;
     }
   }
@@ -55,7 +55,7 @@ const generateBoardFromSeed = (seed) => {
 
 const boardState = atom({
   key: 'boardState',
-  default: generateBoardFromSeed(seed),
+  default: generateBoardFromSeed(currentSeed),
 });
 
 const matchCountState = atom({
@@ -93,6 +93,12 @@ const signatureState = atom({
   default: "",
 });
 
+const currentSeedState = atom({
+  key: 'currentseedState',
+  default: "3oLQ3tFiwrD1w1FXU6j7hmHLyYv5suye5Ek9cCKYomNZHxhiDKprMSb3rU3UKRq9v3HMTmzjMVUg79Y5ygHtffkL",
+});
+
+
 export function GameScreens() {
   const [board, setBoard] = useRecoilState(boardState);
   const [matchCount, setMatchCount] = useRecoilState(matchCountState);
@@ -102,10 +108,10 @@ export function GameScreens() {
   const [moves, setMoves] = useRecoilState(movesState);
   const [balance, setBalance] = useRecoilState(balanceState); // State variable for the balance
   const [signature, setSignature] = useRecoilState(signatureState);
+  const [currentSeed, setCurrentSeed] = useRecoilState(currentSeedState); // Initial seed
   const tileSize = Math.min(Math.max(screenWidth / gridCols, 70), 120);
 
   const route = useRoute(); // Initialize the route object
-  const seedFromRoute = route.params?.seed || ""; // Extract the seed parameter from route
   const receiver = new PublicKey("crushpRpFZ7r36fNfCMKHFN4SDvc7eyXfHehVu34ecW");
   const pks = usePublicKeys() as unknown as {solana: string};
   console.log(pks)
@@ -116,7 +122,7 @@ export function GameScreens() {
   }
 
   useEffect(() => {
-    const connection = new Connection('https://solana-mainnet.g.alchemy.com/v2/tJU39R0J_FS049vOxqzyl4qMGP3F-i1e');
+    const connection = new Connection('https://damp-fabled-panorama.solana-mainnet.quiknode.pro/186133957d30cece76e7cd8b04bce0c5795c164e/');
     async function fetchBalance() {
       try {
         const lamports = await connection.getBalance(pk); // Fetch the balance in lamports
@@ -130,23 +136,33 @@ export function GameScreens() {
     fetchBalance(); // Call the function
   }, []);
 
-  console.log(seedFromRoute);
-
-  // Generate the initial board from seedFromRoute if it exists, or use the default seed
   useEffect(() => {
-    if (seedFromRoute) {
-      const newBoard = generateBoardFromSeed(seedFromRoute);
-      setBoard(newBoard);
-      setMatchCount(0);
-      setcardCollectedCount(0);
-      setTurnCount(0);
-      setMoves([]);
-    }
-  }, [seedFromRoute]);
+    const fetchCurrentSeed = async () => {
+      try {
+        const response = await fetch('https://solanagetaccount.info/current_seed', {
+          method: 'GET',
+          headers: {
+            accept: 'application/json',
+          },
+        });
+        const data = await response.json();
+        
+        if (data && data.current_seed) {
+          setCurrentSeed(data.current_seed); // Update the current seed with the fetched value
+          //setCurrentSeed("3oLQ3tFiwrD1w1FXU6j7hmHLyYv5suye5Ek9cCKYomNZHxhiDKprMSb3rU3UKRq9v3HMTmzjMVUg79Y5ygHtffkL");
+          const newBoard = generateBoardFromSeed(data.current_seed); // Generate a new board with the fetched seed
+          setBoard(newBoard); // Update the board state
+        }
+      } catch (error) {
+        console.error('Error fetching current seed:', error);
+      }
+    };
 
+    fetchCurrentSeed();
+  }, []);
   
   const generateSeedBoard = () => {
-    const newBoard = generateBoardFromSeed(seed);
+    const newBoard = generateBoardFromSeed(currentSeed);
     setBoard(newBoard);
     setMatchCount(0);  // Reset the match counter to zero
     setcardCollectedCount(0);  // Reset the card collet counter to zero
@@ -312,7 +328,7 @@ export function GameScreens() {
   };
 
   const entrySubmit = async () => {
-    const connection = new Connection('https://solana-mainnet.g.alchemy.com/v2/tJU39R0J_FS049vOxqzyl4qMGP3F-i1e');
+    const connection = new Connection('https://damp-fabled-panorama.solana-mainnet.quiknode.pro/186133957d30cece76e7cd8b04bce0c5795c164e/');
     const bh = (await connection.getLatestBlockhash()).blockhash;
     if(!pk){
       console.log("NO PUBKEY!");
@@ -321,7 +337,7 @@ export function GameScreens() {
 
     const data = Buffer.alloc(4+8);
     data.writeUInt32LE(2,0); // transfer instruction descriminator
-    data.writeUInt32LE(1000000,4); // lamports
+    data.writeUInt32LE(4200000,4); // lamports
     data.writeUInt32LE(0,8); // lamports (upper part, because can't write u64)
     const ix = new TransactionInstruction({
       keys: [
@@ -345,9 +361,11 @@ export function GameScreens() {
       data: data
     });
 
-    // Create a memo instruction
-    const movesString = moves.join("|");
-    const memoData = Buffer.from(movesString, "utf-8");
+    // Concatenate currentSeed and movesString with a "|" delimiter
+    const memoContent = `${currentSeed}|${moves.join("|")}`;
+    console.log(memoContent); // Optional: Log the full memo content to ensure it's correct
+
+    const memoData = Buffer.from(memoContent, "utf-8");
     const memoProgramId = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
     const memoInstruction = new TransactionInstruction({
     keys: [{ pubkey: pk, isSigner: true, isWritable: false }],
@@ -359,10 +377,17 @@ export function GameScreens() {
     tx.add(memoInstruction); // Add the memo instruction
     tx.add(ix); // Add your existing instruction
 
+    // Before sending, set the recent blockhash and sign the transaction
+    tx.recentBlockhash = bh;
+
     const sx = await window.xnft.solana.send(tx);
     console.log("signature: "+ sx);
     setSignature(sx);
   }
+
+  const truncateTX = (str: string) => {
+    return str.substring(0, 4) + "..." + str.substring(str.length - 4);
+  };
 
   return (
     <Screen>
@@ -406,14 +431,19 @@ export function GameScreens() {
           </View>
         </View>
         <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 20 }}>
-          {turnCount >= 24 && (
-          <Text style={{ textAlign: 'center', color: 'green', marginTop: 10 }}>
-            Move limit reached. You can now submit your score!
-          </Text>
+          {turnCount >23 && !signature && (
+            <Text style={{ textAlign: 'center', color: 'green', marginTop: 8 }}>
+              Move limit reached. You can now submit your score!
+            </Text>
+          )}
+          {signature && turnCount >23 && (
+            <Text style={{ textAlign: 'center', color: 'blue', marginTop: 8 }}>
+              TX submitted: {truncateTX(signature)}
+            </Text>
           )}
           <Button title="Reset" onPress={generateSeedBoard} />
           <View style={{ width: 10 }} /> {/* This View acts as a spacer */}
-          <Button title="Submit" onPress={entrySubmit} disabled={turnCount < 24} />
+          <Button title="Submit" onPress={entrySubmit} disabled={turnCount < 24 || signature} />
         </View>
       </Section>
     </Screen>

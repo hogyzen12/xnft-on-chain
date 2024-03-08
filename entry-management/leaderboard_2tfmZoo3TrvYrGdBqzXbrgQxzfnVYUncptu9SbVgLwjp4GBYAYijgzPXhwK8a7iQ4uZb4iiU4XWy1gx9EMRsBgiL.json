@@ -1,0 +1,22 @@
+{
+  "players": [
+    {
+      "signer": "2mLvcK6AizrNf5819cHirai5Pea7aq1L1MFTG3B4V2EY",
+      "signature": "5yivqy2zx3YbEJYbhDZF7SEYmGnnhoZJZkP6UTUrDm52zJuQXGj1sNR3QQUnU1Bx8UKUeTdsMye9WqaGQRj8r4ST",
+      "points": 64,
+      "cards_collected": 15
+    },
+    {
+      "signer": "5ynrgCjieGN2ghABos8V7APGtLs9NXvn6NoiC84N4gJQ",
+      "signature": "2yoLXTXp3WnE8tJRJyw6z9gmeZm96fXV8EWZXz53hgtFb2eNr8SqjjHpfWJ1QxpZu3WjFPnCqaxXzb9aKrdXVdqP",
+      "points": 58,
+      "cards_collected": 15
+    },
+    {
+      "signer": "6ZJHt558tjAgkujXtMySHkUoZbwJcPJW3JkmJuoUyRq3",
+      "signature": "5JAXcbwqPgqhtSqJDGt4dNMnfbXY5xYPiHucr3NgJHks1keKnLR5CjiaQYf7oigkCv7CLsMGH6ZSEVL4Bi5VCQWA",
+      "points": 54,
+      "cards_collected": 12
+    }
+  ]
+}
