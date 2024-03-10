@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #We will also save the most recent transaction ID
-previous_transaction="2yoLXTXp3WnE8tJRJyw6z9gmeZm96fXV8EWZXz53hgtFb2eNr8SqjjHpfWJ1QxpZu3WjFPnCqaxXzb9aKrdXVdqP"
+previous_transaction="4WMNKqFMX4ncs4e8ndzQV3rVPFPD5PN55rXeS5R3Zr8JikGDySjQRfqHBgVvRMMT1UkzPwxtF5qKmeoa2SsKgWb8"
 
 #Loop to check if balance has changed
 while true; do
@@ -84,20 +84,29 @@ while true; do
 			cleaned_memo_field=$(echo $memo_field | cut -d "]" -f2)
 			cleaned_memo_field=$(echo $cleaned_memo_field | tr -d '"')
 			echo $cleaned_memo_field
+			
 			# Split the cleaned_memo_field to extract the seed and moves
-			IFS='|' read -r seed moves <<< "$cleaned_memo_field"
+			IFS='|' read -r oppoints opcards seed moves <<< "$cleaned_memo_field"
+
+			echo "Optimistic points: $oppoints" 
+			echo "Optimistic cards: $opcards"		
 
 			# Pass the seed and moves as separate arguments to the Python script
 			python3_output=$(python3 validate.py "$seed" "$moves")
 			echo $python3_output
-			#seed=			$(echo "$python3_output" | cut -d ',' -f1 | cut -d ':' -f2)
 			points=$(echo "$python3_output" | cut -d ',' -f1 | cut -d ':' -f2)
 			cards_collected=$(echo "$python3_output" | cut -d ',' -f2 | cut -d ':' -f2)
-			echo $cards_collected
-			echo $points
+			echo "POW points: $points"
+			echo "POW cards: $cards_collected"
+			
 			# Log entry
 			echo "Signature: $signature, Signer: $signer, Points: $points, Cards Collected: $cards_collected, Seed: $seed" >> transaction_log.txt
 
+			# Check if the values match
+			if [[ "$points" != "$oppoints" ]] || [[ "$cards_collected" != "$opcards" ]]; then
+				# Flag this entry and store in toreview_logs.json
+				echo "{\"Signature\": \"$signature\", \"Signer\": \"$signer\", \"Points\": \"$points\", \"Optimistic Points\": \"$oppoints\", \"Cards Collected\": \"$cards_collected\", \"Optimistic Cards\": \"$opcards\", \"Seed\": \"$seed\"}" >> toreview_logs.json
+			fi
 
 			# Read current leaderboard
 			leaderboard_file="leaderboard.json"
@@ -109,7 +118,7 @@ while true; do
 					echo '{"players": []}' > "$seed_leaderboard_file"
 				fi
 
-				local entry="{\"signer\":\"$signer\",\"signature\":\"$signature\",\"points\":$points,\"cards_collected\":$cards_collected}"
+				local entry="{\"signer\":\"$signer\",\"signature\":\"$signature\",\"points\":$oppoints,\"cards_collected\":$opcards}"
 
 				# Update the seed-specific leaderboard
 				jq --argjson newEntry "$entry" '
@@ -129,7 +138,7 @@ while true; do
 
 			# Function to update the global leaderboard with every entry
 			update_global_leaderboard() {
-				local entry="{\"signer\":\"$signer\",\"signature\":\"$signature\",\"points\":$points,\"cards_collected\":$cards_collected,\"seed\":\"$seed\"}"
+				local entry="{\"signer\":\"$signer\",\"signature\":\"$signature\",\"points\":$oppoints,\"cards_collected\":$opcards,\"seed\":\"$seed\"}"
 
 				# Check if the global leaderboard file exists, if not, create it
 				if [ ! -f "$leaderboard_file" ]; then
@@ -146,7 +155,8 @@ while true; do
 			update_seed_leaderboard
 			update_global_leaderboard
 
-			shdw-drive edit-file -r https://damp-fabled-panorama.solana-mainnet.quiknode.pro/186133957d30cece76e7cd8b04bce0c5795c164e/ -kp /Users/hogyzen12/.config/solana/6tBou5MHL5aWpDy6cgf3wiwGGK2mR8qs68ujtpaoWrf2.json  -f leaderboard.json -u https://shdw-drive.genesysgo.net/3UgjUKQ1CAeaecg5CWk88q9jGHg8LJg9MAybp4pevtFz/leaderboard.json
+			sleep 60
+			#shdw-drive edit-file -r https://damp-fabled-panorama.solana-mainnet.quiknode.pro/186133957d30cece76e7cd8b04bce0c5795c164e/ -kp /Users/hogyzen12/.config/solana/6tBou5MHL5aWpDy6cgf3wiwGGK2mR8qs68ujtpaoWrf2.json  -f leaderboard.json -u https://shdw-drive.genesysgo.net/3UgjUKQ1CAeaecg5CWk88q9jGHg8LJg9MAybp4pevtFz/leaderboard.json
 
 
 			#move to upwards towards most recents

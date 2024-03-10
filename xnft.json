@@ -2,7 +2,7 @@
   "kind": "app",
   "storage": "aws",
   "name": "Card Crush",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Metame Match 3 game",
   "website": "https://www.metamenft.io/",
   "price": 0,

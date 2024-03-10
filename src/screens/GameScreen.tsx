@@ -362,7 +362,7 @@ export function GameScreens() {
     });
 
     // Concatenate currentSeed and movesString with a "|" delimiter
-    const memoContent = `${currentSeed}|${moves.join("|")}`;
+    const memoContent = `${matchCount}|${cardCollectedCount}|${currentSeed}|${moves.join("|")}`;
     console.log(memoContent); // Optional: Log the full memo content to ensure it's correct
 
     const memoData = Buffer.from(memoContent, "utf-8");
